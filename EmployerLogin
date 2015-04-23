@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+     <meta charset="utf-8" />
+     <title> Welcome to Resumes Plus! </title>
+</head>
+
+<body>
+
+<fieldset>	
+<legend>Looking for a New Employee? Let Us Help!</legend>
+
+<form method="post" action= "employeradd.php" id="employerinfo" onsubmit="return displaydata() ;">
+	Enter your company:
+		<input type=text size="10" name="usercompany" id="enteredcompany"/>
+		<article id="companyerror"></article>
+<br>
+	Job Title: 
+		<input type=text size="10" name="employertitle" id="enteredemployertitle"/>
+		<article id="titleerror"></article>
+<br>
+	First Name: 
+		<input type=text size="10" name="firstname" id="enteredfirstname"/>
+		<article id="firstnameerror"></article>
+<br>
+	Last Name: 
+		<input type=text size="10" name="lastname" id="enteredlastname"/>
+		<article id="lastnameerror"></article>
+<br>
+	Phone: 
+		<input type=text size="10" name="employerphone" id="enteredemployerphone"/>
+		<article id="employerphoneerror"></article>
+<br>
+	Email: 
+		<input type=text size="10" name="employeremail" id="enteredemployeremail"/>
+		<article id="employeremailerror"></article>
+<br>	
+		<input type=submit name="employerinfo" value="Enter Your Info!" />
+</form>
+
+	<hr>
+
+</body>
+</html>
