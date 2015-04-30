@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+     <meta charset="utf-8" />
+     <title> Welcome to JobSeeker! </title>
+</head>
+
+<body>
+
+<fieldset>
+	
+	<legend>Please click the link that applies to you</legend>
+
+</body>
+</html>
+	
+	<form method="get" action="http://cscilab.bc.edu/~freemaal/JobSeeker/signup.php">
+	<h1>Job Seeker</h1>
+	<input type ="submit" name ="SeekerSubmit" value="Create Account!"/>
+	</form>
+	
+	<form method="get" action="http://cscilab.bc.edu/~freemaal/JobSeeker/login.php">
+	<h2>Already Have An Account?</h2>
+	<input type ="submit" name ="JobSeekerLogin" value="Click here!"/>
+	</form>
+	
+	<form method="post" action="http://cscilab.bc.edu/~freemaal/JobSeeker/employerlogin.php">
+	<h1>Employer</h1>
+	<input type ="submit" name ="EmployerSubmit" value="Click here!"/>
+	</form>
+	
+<TD class="RightCurve">&nbsp;</TD>
+</TR>
+</TABLE>
+<TABLE BORDER="0" WIDTH="100%" CELLPADDING="0"CELLSPACING="0" class="RegionNoBorder"><TR><TD class="RegionHeaderColor" WIDTH="100%" DIR="LTR" ><DIV id="pcnt1188_661053_1188_657330_657330"><p>
+ <!-- rss portlet start -->
+<h2><a href="http://time.com" target="_blank">TIME</a>
+</h2>
+<ul>
+   <li><a href="http://feedproxy.google.com/%7Er/time/topstories/%7E3/jS40MIDMN70/" target="_blank" title="">Google Maps Is Now a Giant Game of Pac-Man</a>
+   </li>
+   <li><a href="http://feedproxy.google.com/%7Er/time/topstories/%7E3/ZSLg6F_SC3A/" target="_blank" title="">White House Outlines Plans to Cut Carbon Emissions by up to 28%</a>
+   </li>
+   <li><a href="http://feedproxy.google.com/%7Er/time/topstories/%7E3/NrUOEEHSQrg/" target="_blank" title="">Connecticut Gov. Malloy: âMike Pence Knew What He Was Doingâ</a>
+   </li>
+   <li><a href="http://feedproxy.google.com/%7Er/time/topstories/%7E3/zswAgsgnJjY/" target="_blank" title="">Kit Harington Has a Point About Women Objectifying Men</a>
+   </li>
+   <li><a href="http://feedproxy.google.com/%7Er/time/topstories/%7E3/2EpW4tRm4Qk/" target="_blank" title="">Woman Stabs Boyfriend For Eating Her Salsa</a>
+   </li>
+</ul>
+ <!-- rss portlet end -->
+</p>
+</DIV></TD></TR>
+</TABLE>
+</DIV></TD></TR>
+		
+</fieldset>
+</body>
+</html>
