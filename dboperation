@@ -1,0 +1,164 @@
+<?php 
+	
+	include 'dbconn.php';
+
+	function select($searchstr){
+
+		$cookie_name = "removed_attractions";	
+	
+		$dbconn = connectToDb( 'freemaal' );
+		
+			if( $searchstr != "" )
+				if(!isset($_COOKIE[$cookie_name]))
+					$query = "SELECT * FROM bestofbc WHERE name LIKE '%". $searchstr . "%'";
+				else 
+					$query = "SELECT * FROM bestofbc WHERE name LIKE '%". $searchstr . "%' AND attraction_id NOT IN (" . $_COOKIE[$cookie_name] . ")" ;
+			else 
+				if( !isset($_COOKIE[$cookie_name]) )
+					$query = "SELECT * FROM bestofbc" ;
+				else
+					$query = "SELECT * FROM bestofbc WHERE attraction_id NOT IN (" . $_COOKIE[$cookie_name] . ")" ;
+					
+		$result = $dbconn->query($query) or die( "Error in the consult.." . mysqli_error( $dbconn ) );
+		
+		mysqli_close ( $dbconn );				
+	
+		return $result;
+		
+	}
+
+	function insertResume($aboutme,$qualifications,$workxp){	
+		$aboutme = mysql_real_escape_string ( $aboutme );													
+		$userid = isset( $_COOKIE['userid'] ) ? $_COOKIE['userid'] : 1;
+		date_default_timezone_set("America/New_York");	
+		$dbconn = connectToDb( 'freemaal' );
+		$date = date("Y-m-d");							
+
+		$query = "INSERT INTO Resume(JobSeekerId, AboutMe, CreatedDate, LastModified) VALUES ( '$userid','$aboutme','$date','$date' )"; 
+		
+		$result = $dbconn->query( $query ) or die( "Error in the consult.." . mysqli_error( $dbconn ) );
+		
+		if( $result ) {
+			
+			$query = "SELECT MAX(ResumeId) AS 'ResumeId' FROM Resume WHERE JobSeekerId = '$userid'";
+			
+			$result = $dbconn->query($query) or die( "Error in the consult.." . mysqli_error( $dbconn ) );
+			$row = $result->fetch_array( MYSQLI_ASSOC );
+			$resumeid = $row['ResumeId'];
+			
+		} else {
+ 			// UNDO INSERT AND ERROR OUT		
+		}
+
+		if ( !insertEducation( $resumeid,$qualifications ) || !insertWork( $resumeid,$workxp )){
+			// UNDO INSERTS AND ERROR OUT
+		}
+	
+		mysqli_close ( $dbconn );		
+	
+		return $result;
+		
+	}
+
+	function insertEducation($resumeid, $qualifications){
+		$dbconn = connectToDb( 'freemaal' );
+		$success = true;
+		
+		foreach ( $qualifications as $qualification ){
+			$institution = mysql_real_escape_string ( $qualification['Institution'] );
+			$qualname = mysql_real_escape_string ( $qualification['QualName'] );
+			$startdate = $qualification['StartDate'];
+			$enddate = $qualification['EndDate'];
+			$gpa = $qualification['GPA'];
+			$grade = $qualification['Grade'];
+			$comments = mysql_real_escape_string ( $qualification['Comments'] );
+			
+			$query = "INSERT INTO Education(ResumeId, Institution, QualName, StartDate, EndDate, GPA, Grade, Comments) " . 
+						"VALUES ( '$resumeid','$institution','$qualname','$startdate'," . 
+						"'$enddate','$gpa','$grade','$comments' )"; 
+		
+			$result = $dbconn->query( $query ) or die( "Error in the consult.." . mysqli_error( $dbconn ) );
+			
+			if ( !$result )
+				$success = false;		
+		
+		}
+	
+		mysqli_close ( $dbconn );
+		return $success;
+	}
+
+	function insertWork($resumeid, $workxp){
+		$dbconn = connectToDb( 'freemaal' );
+		$success = true;
+		
+		foreach ( $workxp as $role ){
+			$jobtitle = mysql_real_escape_string ( $role['JobTitle'] );
+			$company = mysql_real_escape_string ( $role['Company'] );
+			$startdate = $role['StartDate'];
+			$enddate = $role['EndDate'];
+			$jobdesc = mysql_real_escape_string ( $role['JobDesc'] );
+			
+			$query = "INSERT INTO WorkExperience(ResumeId, JobTitle, Company, StartDate, EndDate, JobDesc) " . 
+						"VALUES ( '$resumeid','$jobtitle','$company','$startdate'," . 
+						"'$enddate','$jobdesc' )"; 
+		
+			$result = $dbconn->query( $query ) or die( "Error in the consult.." . mysqli_error( $dbconn ) );
+			
+			if ( !$result )
+				$success = false;		
+		
+		}
+	
+		mysqli_close ( $dbconn );
+		return $success;
+	}
+
+
+	function insertJobSeeker($firstname,$lastname,$address,$phone,$sphone,$email,$password){
+		
+		$dbconn = connectToDb( 'freemaal' );
+
+		$query = "INSERT INTO JobSeeker( FirstName, LastName, Address, PrimaryPhone, SecondaryPhone, Email, Password ) VALUES ( '$firstname','$lastname','$address','$phone','$sphone','$email','$password' )"; 
+		
+		$result = $dbconn->query( $query ) or die( "Error in the consult.." . mysqli_error( $dbconn ) );
+	
+		mysqli_close ( $dbconn );
+		
+		return $result;
+
+	}
+
+	function selectMember($email){
+		$dbconn = connectToDb( 'freemaal' );
+
+		$query = "SELECT * FROM JobSeeker WHERE email = '$email'"; 
+		
+		$result = $dbconn->query( $query ) or die( "Error in the consult.." . mysqli_error( $dbconn ) );
+		
+		mysqli_close ( $dbconn );
+		
+		return $result;
+	}
+
+	function searchForMember($email){
+		
+		$result = selectMember($email);
+	
+		$num_rows = $result->num_rows;	
+
+		$result->close();		
+		
+		if($num_rows == 0)
+			return false;
+		else 
+			return true;
+		
+	}
+
+	
+
+?>
+
+
+
