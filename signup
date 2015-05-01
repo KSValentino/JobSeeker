@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+
+	<html lang="en">
+	
+	<head>
+	     <meta charset="utf-8" >
+	     <title>Job Seeker - Sign Up!</title>
+	     <link rel="stylesheet" type="text/css" href="css/style.css">
+	</head>
+	<body>
+	
+		<?php
+			include 'dboperation.php';
+			$emailmsg = "This will be your username!";
+			if( isset( $_POST['signup'] ) ){
+				$email = mysql_real_escape_string ( $_POST['email'] );	
+				
+				$emailinuse = searchForMember( $email );			
+				
+				if( $emailinuse ) 
+					$emailmsg = "This email is already associated to an account";
+				else {
+					$firstname = mysql_real_escape_string ( $_POST['firstname'] );
+					$lastname = mysql_real_escape_string ( $_POST['lastname'] );
+					$address = isset( $_POST['address'] ) ? mysql_real_escape_string ( $_POST['address'] ) : "null";
+					$phone = isset( $_POST['phone'] ) ? mysql_real_escape_string ( $_POST['phone'] ) : "null";				
+					$sphone = isset( $_POST['sphone'] ) ? mysql_real_escape_string ( $_POST['sphone'] ) : "null";						
+	
+					$password = sha1( $_POST['password'] );
+					
+					insertJobSeeker($firstname,$lastname,$address,$phone,$sphone,$email,$password);
+				}
+			}
+		?>
+	
+		<h1>Sign Up</h1>
+			
+		<form method="post" onsubmit="return validateRegoForm()" >
+	
+			
+			<fieldset>
+		   	<legend><b>Enter your details</b></legend>
+				
+				<input type="hidden" name="op" value="insert">			
+				
+				<div style="float:left; overflow:hidden; ">
+	
+					*First Name: <input type="text" id="firstname" name="firstname" ><p id="firstnameerror"></p><br>
+					*Last Name: <input type="text" id="lastname" name="lastname" ><p id="lastnameerror"></p><br>
+					*Email: <input type="text" id="email" name="email" ><p id="emailerror"><?php echo $emailmsg ?></p><br>
+					*Password: <input type="password" id="password" name="password" ><p id="passworderror"></p><br>
+					*Confirm Password: <input type="password" id="password2" name="password2" ><p id="password2error"></p><br>
+					Address: <input type="text" id="address" name="address" ><br>
+					Phone No: <input type="text" id="phone" name="phone" ><br>
+					Secondary Phone No: <input type="text" id="sphone" name="sphone" ><br>
+					<input type="submit" id="signup" name="signup" value="Sign Up!"><br><br>
+					
+					<a href="index.php" >Take me back to the home page</a>												
+					
+				</div>
+	
+			</fieldset>	
+			
+		</form>
+			
+		<script>
+			function validateRegoForm() {
+			    var input, pw2, cont = true, re = /.+@.+\..+/;
+					
+			    input = document.getElementById("firstname").value;
+			
+			    if ( input.length == 0 ) {
+			    	document.getElementById( "firstnameerror" ).innerHTML = "You must enter a first name";
+			    	cont = false;
+			    } else {
+			    	document.getElementById( "firstnameerror" ).innerHTML = "";
+			    }
+			
+				 input = document.getElementById("lastname").value;
+			
+			    if ( input.length == 0 ) {
+			    	document.getElementById( "lastnameerror" ).innerHTML = "You must enter a last name";
+			    	cont = false;
+			    } else {
+			    	document.getElementById( "lastnameerror" ).innerHTML = "";
+			    }
+			    	
+			    input = document.getElementById("password").value;
+			
+			    if ( input.length < 8 ) {
+			    	document.getElementById( "passworderror" ).innerHTML = "Your password must be 8 characters or more";
+			    	cont = false;
+			    } else {
+			    	document.getElementById( "passworderror" ).innerHTML = "";
+			    } 
+			    
+			    pw2 = document.getElementById("password2").value;
+			
+			    if ( input !=  pw2) {
+			    	document.getElementById( "password2error" ).innerHTML = "The passwords you entered do not match";
+			    	cont = false;
+			    } else {
+			    	document.getElementById( "password2error" ).innerHTML = "";
+			    } 
+			    
+			    input = document.getElementById("email").value;
+				 var OK = re.exec( input );			 
+				 
+			    if ( input.length == 0) {
+			    	document.getElementById( "emailerror" ).innerHTML = "You must enter an email address";
+			    	cont = false;
+			    } else if( !OK ){
+			    	document.getElementById( "emailerror" ).innerHTML = "The email you entered has an invalid format";
+			    	cont = false;
+			    } else {
+			    	document.getElementById( "emailerror" ).innerHTML = "This will be your username!";
+			    }
+			
+				 return cont;
+					
+			}
+		</script>	
+		
+	</body>
+	
+</html>
+
+				
+
