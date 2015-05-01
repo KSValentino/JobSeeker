@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+        <title> Search the Database </title>
+</head>
+<body>
+<?php
+
+	$_GET['level']; 
+	$_GET['major']; 
+	$_GET['gpa']; 
+	
+?>
+
+<?php
+echo "<form method='post' action='CustomResume.php'>"; 
+
+function performQuery($dbc, $query){
+	$result = mysqli_query($dbc, $query) or die("bad query".mysqli_error($dbc));
+	return $result;
+}
+	
+	$servername = "localhost";
+	$username = "freemaal";
+	$password = "zUtqzmrJ";
+	$dbname = "freemaal";
+	$major = $_GET['major']; 
+	$level = $_GET['level'];
+	$major = $_GET['major'];
+	$gpa = $_GET['gpa'];
+	
+	$conn = new mysqli($servername, $username, $password, $dbname);
+		if ($conn->connect_error) {
+     	die("Connection failed: " . $conn->connect_error);
+	} 
+
+	$sql = 	"SELECT * FROM `Education` WHERE  `Major` Like '%$major%'";
+
+			
+	$result = performQuery($conn, $sql);
+	
+	echo "<h2> Results that Match Your Preferences </h2>"; 
+	echo "<h3> Click for more information on a candidate </h3>"; 
+	
+	while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+     	echo "<table><tr><th></th><th>Job Seeker</th><th>About Me</th></tr>";
+         	echo "<tr>
+					<td> 
+         				<input type='radio' onclick='getinfo&#40;this&#41;' name='learnmore'/>	
+         			</td>	
+         			<td>			
+         							" . $row["Institution"]. " <br>
+         							" . $row["Level"]. " <br>
+         							" . $row["Major"]. " <br>
+         							" . $row["GPA"]. "
+         					
+         			</td>
+         			
+         			<td>			" . $row["Comments"]. " <br>
+         			</td>
+         		</tr>";
+    	}
+     		echo "</table>";
+	
+	$conn->close();
+	
+	echo "<input type='submit' name='submit' value='View Full Resume'/>"; 
+	echo "</form>"; 
+?>
+
+
+</body>
+</html>
