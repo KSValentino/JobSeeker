@@ -1,0 +1,10 @@
+<?php
+
+	function connectToDB($dbname){
+		$username="freemaal";$password="zUtqzmrJ";;
+		$dbc= @mysqli_connect("localhost", $username, $password, $dbname) or
+						die("Connect failed: ". mysqli_connect_error());
+		return $dbc;
+	}
+	
+?>
