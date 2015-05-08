@@ -1,3 +1,35 @@
+<?php
+	$error = "";
+	include 'dboperation.php';
+	if( isset( $_POST['login'] ) ){
+		$email = mysql_real_escape_string( $_POST['email'] );
+		$password = sha1( $_POST['password'] );
+		$userarray = selectMember($email);
+		$rs = $userarray['userinfo'];
+		if($rs->num_rows == 0){
+			$userarray = selectEmployer($email);
+			$rs = $userarray['userinfo'];
+		}
+		$usertype = $userarray['usertype'];			
+		$userinfo = mysqli_fetch_assoc($rs);
+		if( is_null( $userinfo ) || $userinfo['Password'] != $password )
+			$error = "The email or password is invalid<br>";
+		else {
+			$cookie_name = "usertype";
+			$cookie_val = $usertype;
+			setcookie($cookie_name, $cookie_val, time() + 3600, "/"); // 3600 = 1 hour
+			$cookie_name = "userid";
+			if($usertype == "seeker")
+				$cookie_val = $userinfo['JobSeekerId'];
+			else 
+				$cookie_val = $userinfo['EmployerId'];
+			setcookie($cookie_name, $cookie_val, time() + 3600, "/"); // 3600 = 1 hour
+			header("Refresh: 0; homepage.php");
+		}
+	}
+
+?>
+
 <!DOCTYPE html>
 
 	<html lang="en">
@@ -8,22 +40,7 @@
 	     <link rel="stylesheet" type="text/css" href="css/style.css">
 	</head>
 	<body>
-	
-		<?php
-			$error = "";
-			include 'dboperation.php';
-			if( isset( $_POST['login'] ) ){
-				$email = mysql_real_escape_string( $_POST['email'] );
-				$password = sha1( $_POST['password'] );
-				$rs = selectMember($email);
-				$userinfo = mysqli_fetch_assoc($rs);
-				if( is_null( $userinfo ) || $userinfo['Password'] != $password )
-					$error = "The email or password is invalid<br>";
-				else {
-					echo "THAT WORKED";
-				}
-			}
-		?>
+		
 	
 		<h1>Log In</h1>
 			
@@ -41,7 +58,7 @@
 					Password: <input type="password" id="password" name="password" ><br>
 					<input type="submit" id="login" name="login" value="Log In"><br><br>
 					
-					<a href="index.php" >Take me back to the home page</a>												
+					<a href="homepage.php" >Take me back to the home page</a>												
 					
 				</div>
 	
@@ -72,4 +89,5 @@
 </html>
 
 				
+
 
