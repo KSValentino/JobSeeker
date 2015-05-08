@@ -1,129 +1,224 @@
-<!DOCTYPE html>
+<?php
+include 'dboperation.php';
+?>
 
-	<html lang="en">
+<!DOCTYPE html>
+<html lang="en">
+<head>
+        <title> Search the Database </title>
+    <style>
+     	body{background-color: lightblue;}
+     		<!-- http://www.textfixer.com/tutorials/css-tables.php -->
+		table.resultstable {
+			font-family: verdana,arial,sans-serif;
+			font-size:11px;
+			color:#333333;
+			border-width: 1px;
+			border-color: #999999;
+			border-collapse: collapse;
+		}
+		table.resultstable th {
+			background:#b5cfd2 url('cell-blue.jpg');
+			border-width: 1px;
+			padding: 8px;
+			border-style: solid;
+			border-color: #999999;
+		}
+		table.resultstable td {
+			background:#dcddc0 url('cell-grey.jpg');
+			border-width: 1px;
+			padding: 8px;
+			border-style: solid;
+			border-color: #999999;
+		}
+	</style>
+
+</head>
+<body>
+
+
+<?php
+
+
+
+	/*$servername = "localhost";
+	$username = "freemaal";
+	$password = "zUtqzmrJ";
+	$dbname = "freemaal";
 	
-	<head>
-	     <meta charset="utf-8" >
-	     <title>Job Seeker - Sign Up!</title>
-	     <link rel="stylesheet" type="text/css" href="css/style.css">
-	</head>
-	<body>
+	$conn = new mysqli($servername, $username, $password, $dbname);
+		if ($conn->connect_error) {
+     	die("Connection failed: " . $conn->connect_error);
+	} 	
 	
-		<?php
-			include 'dboperation.php';
-			$emailmsg = "This will be your username!";
-			if( isset( $_POST['signup'] ) ){
-				$email = mysql_real_escape_string ( $_POST['email'] );	
-				
-				$emailinuse = searchForMember( $email );			
-				
-				if( $emailinuse ) 
-					$emailmsg = "This email is already associated to an account";
-				else {
-					$firstname = mysql_real_escape_string ( $_POST['firstname'] );
-					$lastname = mysql_real_escape_string ( $_POST['lastname'] );
-					$address = isset( $_POST['address'] ) ? mysql_real_escape_string ( $_POST['address'] ) : "null";
-					$phone = isset( $_POST['phone'] ) ? mysql_real_escape_string ( $_POST['phone'] ) : "null";				
-					$sphone = isset( $_POST['sphone'] ) ? mysql_real_escape_string ( $_POST['sphone'] ) : "null";						
+	*/
+	$major = $_GET['major']; 
+	$level = $_GET['level'];
+	$mingpa = $_GET['mingpa'];
+	$maxgpa = $_GET['maxgpa'];
+	$acceptabledist = $_GET['distance'];
 	
-					$password = sha1( $_POST['password'] );
-					
-					insertJobSeeker($firstname,$lastname,$address,$phone,$sphone,$email,$password);
-				}
-			}
-		?>
+	$levelclause = ($level != "Select One") ? " AND e.`Level` = '$level'" : "";
+	$majorclause = ($major != "Select One") ? " AND e.`Major` = '$major'" : "";
 	
-		<h1>Sign Up</h1>
-			
-		<form method="post" onsubmit="return validateRegoForm()" >
-	
-			
-			<fieldset>
-		   	<legend><b>Enter your details</b></legend>
-				
-				<input type="hidden" name="op" value="insert">			
-				
-				<div style="float:left; overflow:hidden; ">
-	
-					*First Name: <input type="text" id="firstname" name="firstname" ><p id="firstnameerror"></p><br>
-					*Last Name: <input type="text" id="lastname" name="lastname" ><p id="lastnameerror"></p><br>
-					*Email: <input type="text" id="email" name="email" ><p id="emailerror"><?php echo $emailmsg ?></p><br>
-					*Password: <input type="password" id="password" name="password" ><p id="passworderror"></p><br>
-					*Confirm Password: <input type="password" id="password2" name="password2" ><p id="password2error"></p><br>
-					Address: <input type="text" id="address" name="address" ><br>
-					Phone No: <input type="text" id="phone" name="phone" ><br>
-					Secondary Phone No: <input type="text" id="sphone" name="sphone" ><br>
-					<input type="submit" id="signup" name="signup" value="Sign Up!"><br><br>
-					
-					<a href="index.php" >Take me back to the home page</a>												
-					
-				</div>
-	
-			</fieldset>	
-			
-		</form>
-			
-		<script>
-			function validateRegoForm() {
-			    var input, pw2, cont = true, re = /.+@.+\..+/;
-					
-			    input = document.getElementById("firstname").value;
-			
-			    if ( input.length == 0 ) {
-			    	document.getElementById( "firstnameerror" ).innerHTML = "You must enter a first name";
-			    	cont = false;
-			    } else {
-			    	document.getElementById( "firstnameerror" ).innerHTML = "";
-			    }
-			
-				 input = document.getElementById("lastname").value;
-			
-			    if ( input.length == 0 ) {
-			    	document.getElementById( "lastnameerror" ).innerHTML = "You must enter a last name";
-			    	cont = false;
-			    } else {
-			    	document.getElementById( "lastnameerror" ).innerHTML = "";
-			    }
-			    	
-			    input = document.getElementById("password").value;
-			
-			    if ( input.length < 8 ) {
-			    	document.getElementById( "passworderror" ).innerHTML = "Your password must be 8 characters or more";
-			    	cont = false;
-			    } else {
-			    	document.getElementById( "passworderror" ).innerHTML = "";
-			    } 
-			    
-			    pw2 = document.getElementById("password2").value;
-			
-			    if ( input !=  pw2) {
-			    	document.getElementById( "password2error" ).innerHTML = "The passwords you entered do not match";
-			    	cont = false;
-			    } else {
-			    	document.getElementById( "password2error" ).innerHTML = "";
-			    } 
-			    
-			    input = document.getElementById("email").value;
-				 var OK = re.exec( input );			 
-				 
-			    if ( input.length == 0) {
-			    	document.getElementById( "emailerror" ).innerHTML = "You must enter an email address";
-			    	cont = false;
-			    } else if( !OK ){
-			    	document.getElementById( "emailerror" ).innerHTML = "The email you entered has an invalid format";
-			    	cont = false;
-			    } else {
-			    	document.getElementById( "emailerror" ).innerHTML = "This will be your username!";
-			    }
-			
-				 return cont;
-					
-			}
-		</script>	
 		
-	</body>
+
+	$sql = 	"SELECT * FROM `Resume` r, `Education` e, `WorkExperience` w" .  
+				" WHERE e.`ResumeId` = r.`ResumeId` AND e.`ResumeId` = w.`ResumeId` AND w.`ResumeId` = r.`ResumeId`" . 
+				" AND e.`GPA` >= $mingpa AND e.`GPA` <= $maxgpa " . 
+				$levelclause . $majorclause;
 	
+	$result = performQuery($sql);
+	
+	$matchingseekers = array();
+	
+	$empid = $_COOKIE['userid'];
+	$sql = "SELECT * FROM `Employer` WHERE `EmployerId` = '$empid'";
+	$rs = performQuery($sql);
+	$emp = mysqli_fetch_array($rs);	
+	
+	if($acceptabledist != "" && !is_null($acceptabledist)){
+
+		$empaddress = $emp['Address'];
+		
+		$empdata = getlatlong($empaddress);
+		$emplat = $empdata[0];
+		$emplon = $empdata[1];
+	
+		while($seeker = mysqli_fetch_array($result)) {
+			
+				$seekerid = $seeker['JobSeekerId'];
+				$sql = 	"SELECT * FROM `JobSeeker` WHERE `JobSeekerId` = '$seekerid'";
+				$rs = performQuery($sql);
+				$seeker = mysqli_fetch_array($rs, MYSQLI_ASSOC);
+				$seekeraddress = $seeker['Address'];
+				
+				$seekerdata = getlatlong($seekeraddress);
+				
+				$hiddenfrom = $seeker['HiddenFrom'];
+				
+				if($seekerdata != false){
+					$seekerlat = $seekerdata[0];
+					$seekerlon = $seekerdata[1];
+					$distance = calcDistance($emplat,$emplon,$seekerlat,$seekerlon);
+					
+					if( ( $distance < $acceptabledist ) && ( strpos($hiddenfrom,$emp['Company'] ) == false ) ){
+						array_push($matchingseekers,$seeker);		
+					}
+				}
+			} 
+		} else {
+			while($seeker = mysqli_fetch_array($result)) { 
+				array_push($matchingseekers,$seeker);
+			}
+		}
+	
+	
+	
+	
+	echo "<form method='get' action='customresume.php'>"; 
+	echo "<h2> Results that Match Your Preferences </h2>"; 
+	echo "<h3> Click for more information on a candidate </h3>"; 
+	
+	
+	
+	foreach ($matchingseekers as $row) {
+		$seekerid = $row['JobSeekerId'];
+		$sql = 	"SELECT * FROM `JobSeeker` WHERE `JobSeekerId` = '$seekerid'";
+		$rs = performQuery($sql);
+		$seeker = mysqli_fetch_array($rs, MYSQLI_ASSOC);
+		$name = $seeker['FirstName'] . " " . $seeker['LastName'];
+		if(strpos($seeker['HiddenFrom'],$emp['Company']) === false){
+			
+			echo "<table class='resultstable'>";
+		     	echo"<tr><th></th><th>Job Seeker</th><th>About Me</th></tr>";
+		         	echo "<tr>
+							<td> 
+		         				<input type='radio' onclick='getinfo&#40;this&#41;' name='userid' value='$seekerid'/>	
+		         			</td>	
+		         			<td>			
+		         							<strong> " . $name . " </strong> <br> 
+		         							" . $row["Institution"]. " <br>
+		         							" . $row["Level"]. " in " . $row["Major"]. " <br>
+		         							GPA " . $row["GPA"]. "
+		         					
+		         			</td>
+		         			
+		         			<td>			" . $row["AboutMe"]. " <br>
+		         			</td>
+		         		</tr>";
+		    	}
+		 }
+     		echo "</table>";
+	
+	//$conn->close();
+	
+	echo "<input type='submit' name='submit' value='View Full Resume'/><br><br>"; 
+	echo "<a href='homepage.php' >Take me back to the home page</a><br>";
+	echo "</form>"; 
+		
+?>
+
+
+</body>
 </html>
 
-				
+<?php 
+	
+	function getlatlong($address){
+	 	
+	    $urladdress = urlencode($address);
+	     
+	    $url = "http://maps.google.com/maps/api/geocode/json?sensor=false&address={$urladdress}";
+	 
+	    $json = file_get_contents($url);
+	     
+	    $return = json_decode($json, true);
+	 
+	    if($return['status']=='OK'){
+	 
+	        $latitude = $return['results'][0]['geometry']['location']['lat'];
+	        $longitude = $return['results'][0]['geometry']['location']['lng'];
+	        $formatted_address = $return['results'][0]['formatted_address'];
+	         
+	        if($latitude && $longitude && $formatted_address){
+	         
+	            $data_arr = array();            
+	             
+	            array_push(
+	                $data_arr, 
+	                    $latitude, 
+	                    $longitude, 
+	                    $formatted_address
+	                );
+	             
+	            return $data_arr;
+	             
+	        } else {
+	            return false;
+	        } 
+	    } else {
+	        return false;
+	    }
+	}
 
+	function calcDistance($lat1,$lon1,$lat2,$lon2){
+		
+		$R = 6371000; // metres
+		$latrad1 = deg2rad( $lat1 );
+		$latrad2 = deg2rad( $lat2 );
+		$latdif = deg2rad( $lat2-$lat1 );
+		$londif = deg2rad( $lon2-$lon1 );
+
+		$a = sin($latdif/2) * sin($latdif/2) +
+        cos($latrad1) * cos($latrad2) *
+        sin($londif/2) * sin($londif/2);
+		$c = 2 * atan2(sqrt($a), sqrt(1-$a));
+
+		$distance = $R * $c;
+		
+		return ($distance / 1000); // For kilometers
+	}
+
+
+?>
