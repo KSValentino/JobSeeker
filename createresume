@@ -1,302 +1,1041 @@
 <?php
+
 	session_start();
+
 	include 'dboperation.php';
-	$aboutmedefault = "Enter a brief description of yourself here";
-	$aboutmestick = isset( $_POST['aboutme'] ) ? $_POST['aboutme'] : "Enter a brief description of yourself here";
-	if( isset( $_POST['addqualification'] ) ){
-		$_SESSION['numEducation']++;
-	} else if( isset ( $_POST['addwork'] ) ) {
-		$_SESSION['numWork']++;
-	} else if ( isset( $_POST['createresume'] ) ){
-		$qualifications = array();
-		$numEducation = $_SESSION['numEducation'];
-		for($i = 0; $i < $numEducation; $i++){
-			$gpa = isset( $_POST['gpa' . $i] ) ? $_POST['gpa' . $i] : "null";
-			$grade = isset( $_POST['grade' . $i] ) ? $_POST['grade' . $i] : "null";
-			$default = "Enter any other information here";
-			$comments = ( $_POST['comments' . $i] != "" && $_POST['comments' . $i] != $default) ? $_POST['comments' . $i] : "null";
-			$qualification = array(
-				"Institution" => $_POST['institution' . $i],
-   	 		"QualName" => $_POST['qualification' . $i],
-   	 		"StartDate" => $_POST['startdate' . $i],
-   	 		"EndDate" => $_POST['enddate' . $i],
-   	 		"GPA" => $gpa,
-   	 		"Grade" => $grade,
-   	 		"Comments" => $comments
-			);
-			$qualifications[$i] = $qualification;
-		}
-		$workxp = array();
-		$numWork = $_SESSION['numWork'];
-		for($i = 0; $i < $numWork; $i++){
-			$default = "Enter a brief description of your role";
-			$jobdesc = ( $_POST['jobdesc' . $i] != "" && $_POST['jobdesc' . $i] != $default) ? $_POST['comments' . $i] : "null";
-			$role = array(
-				"JobTitle" => $_POST['jobtitle' . $i],
-   	 		"Company" => $_POST['company' . $i],
-   	 		"StartDate" => $_POST['startdatew' . $i],
-   	 		"EndDate" => $_POST['enddatew' . $i],
-   	 		"JobDesc" => $jobdesc
-			);
-			$workxp[$i] = $role;
-		}
-		$aboutme = ( $_POST['aboutme'] != "" && $_POST['aboutme'] != $aboutmedefault) ? $_POST['aboutme'] : "null";
-		insertResume($aboutme,$qualifications,$workxp);
-			
+
+	$userid = $_COOKIE['userid'];
+
+	$returnarray = selectResume($userid);
+
+	$resume = $returnarray['Resume'];
+
+	
+
+	$insertsuccess = false; 
+
+	$updatesuccess = false; 
+
+	
+
+	if (count($resume) == 0){
+
+			$title = "Create New Resume";
+
 	} else {
-		$_SESSION['numEducation'] = 1;
-		$_SESSION['numWork'] = 1;
+
+		$title = "Duplicate Resume"; // Will be overwritten if it is an edit
+
 	}
+
+	if( $_SESSION['fromedit'] && $_SESSION['firstrun'] ){
+
+		$title = "Edit Resume";
+
+		$_SESSION['AboutMe'] = $resume['AboutMe'];
+
+		$_SESSION['Education'] = $returnarray['Education'];
+
+		$_SESSION['WorkExperience'] = $returnarray['WorkExperience'];
+
+		$_SESSION['numEducation'] = count( $_SESSION['Education'] );
+
+		$_SESSION['numWork'] = count( $_SESSION['WorkExperience'] );		
+
+	} else {
+
+		
+
+		$_SESSION['AboutMe'] = isset( $_POST['aboutme'] ) ? $_POST['aboutme'] : "Enter a brief description of yourself here";
+
+		
+
+		if( isset( $_POST['addqualification'] ) ){
+
+			$_SESSION['numEducation']++;
+
+		} else if( isset ( $_POST['addwork'] ) ) {
+
+			$_SESSION['numWork']++;
+
+		/*} else if( isset ( $_POST['removework'] ) ) {
+
+			$worknum = $_POST['removework'];
+
+			array_push($_SESSION['delWorkNums'],$worknum);
+
+			echo $_SESSION['delWorkNums'][count( $_SESSION['delWorkNums'] )-1];
+
+		} else if( isset ( $_POST['removeedu'] ) ) {
+
+			$edunum = $_POST['removeedu'];
+
+			array_push($_SESSION['delEduNums'],$edunum);
+
+			//echo $_SESSION['delWorkNums'][count( $_SESSION['delWorkNums'] )-1];*/
+
+		} else if ( isset( $_POST['createresume'] ) ){
+
+			$resumeinfo = getResumeInfo();
+
+			$aboutme = $resumeinfo['AboutMe'];
+
+			$qualifications = $resumeinfo['Education'];
+
+			$workxp = $resumeinfo['WorkExperience'];
+
+			//echo $resumeinfo['WorkExperience'][1]['Deleted'];
+
+			$insertsuccess = insertResume($userid,$aboutme,$qualifications,$workxp); 
+
+				
+
+		} else if (isset($_POST['updateresume'])){
+
+				$ids = $_SESSION['ids'];
+
+				$resumeinfo = getResumeInfo();
+
+				//$userid = $resumeinfo['UserId'];
+
+				$aboutme = $resumeinfo['AboutMe'];
+
+				$qualifications = $resumeinfo['Education'];
+
+				$workxp = $resumeinfo['WorkExperience'];
+
+				$updatesuccess = updateResume($ids,$userid,$aboutme,$qualifications,$workxp);
+
+		} else if (count($resume) == 0){
+
+			$_SESSION['numEducation'] = 1;
+
+			$_SESSION['numWork'] = 1;
+
+			//$_SESSION['delWorkNums'] = array();
+
+			//$_SESSION['delEduNums'] = array();
+
+		} 
+
+	}
+
 ?>
+
+
 
 <!DOCTYPE html>
 
+
+
 	<html lang="en">
+
 	
+
 	<head>
+
 	     <meta charset="utf-8" >
-	     <title>Create New Resume</title>
+
+	     <title><?php echo $title ?></title>
+
 	     <link rel="stylesheet" type="text/css" href="css/style.css">
+
 	</head>
+
 	<body>
+
 	
-		<h1>New Resume</h1>
+
+		<h1><?php echo $title ?></h1>
+
 			
-		<form name="resumeform" id="resumeform" method="post" onsubmit="return validateResumeForm()">
+
+		<form name="resumeform" id="resumeform" method="post" onsubmit="return submitForm();">
+
 	
+
 			
+
 			<fieldset>
+
 				
+
 				<input type="hidden" name="op" value="insert">			
+
 				
+
 				<div style="float:left; overflow:hidden; ">
-					<b>About Me:</b> <br><textarea id="aboutme" name="aboutme" form="resumeform"><?php echo $aboutmestick ?> </textarea><p id="aboutmeerror"></p><br><br>
+
 					<?php
-						displayEducation();
-						displayWork();
+
+					
+
+						if( count( $resume ) != 0 && !$_SESSION['fromedit'] ){
+
+							
+
+							echo "You have already created a resume!<br><br>";
+
+							echo "<form method='get' action='customresume.php' >"; 
+
+								echo "<input type='submit' id='viewedit' name='viewedit' value='Click here to View or Edit it'><br><br>"; 
+
+							echo "</form>";
+
+							echo "<a href='homepage.php' >Take me back to the home page</a>"; 
+
+						} elseif( $insertsuccess ) {
+
+							echo "You have successfully created a resume!<br><br>";
+
+							echo "Employers could be contacting you any day now.<br>";
+
+							echo "<a href='homepage.php' >Click here to return to the homepage</a>"; 
+
+						} elseif( $updatesuccess ) {
+
+							echo "You have successfully updated your resume!<br><br>";
+
+							echo "<a href='homepage.php' >Click here to return to the homepage</a>";
+
+						} else {
+
+					?>
+
+						<b>About Me:</b> <br><textarea id="aboutme" name="aboutme" ><?php echo $_SESSION['AboutMe'] ?> </textarea><p id="aboutmeerror"></p><br><br>
+
+					<?php
+
+							displayEducation();
+
+							echo "<br><br>";
+
+							displayWork();
+
+						
+
+							if( !$_SESSION['fromedit'] ){
+
 					?> 
-					<br><br>
-					<input type="submit" id="createresume" name="createresume" value="Submit Completed Resume"><br><br>
+
 					
-					<a href="index.php" >Take me back to the home page</a>												
+
+						<br><br>
+
+						<input type="submit" id="createresume" name="createresume" value="Submit Completed Resume"><br><br>	
+
 					
+
+						<?php
+
+							} else {					
+
+						?>
+
+							
+
+							<br><br>
+
+							<input type="submit" id="updateresume" name="updateresume" value="Update Resume"><br><br>
+
+							
+
+						<?php
+
+							}
+
+							$_SESSION['firstrun'] = 0;
+
+							echo "<a href='homepage.php' >Take me back to the home page</a>"; 
+
+						
+
+						}
+
+					?>											
+
+					
+
 				</div>
+
 	
+
 			</fieldset>	
+
 			
+
 		</form>
+
 			
+
 		<script>
+
 		
+
 			var submitbutton = false;
+
 			document.getElementById('createresume').onclick = function() {
+
 	   		submitbutton = true;
+
 			};
 
+
+
 			function validateResumeForm() {	
+
 			
-				var aboutmeinput, aboutmeOK = true;; 
-					
-				if( !submitbutton ){
-					return true; 
-				} 	
+
+				var aboutmeinput, hiddenfrom, aboutmeOK = true;;
+
 				
+
+					
+
+				if( !submitbutton ){
+
+					return true; 
+
+				} 	
+
+				
+
 				aboutmeinput = document.getElementById( "aboutme" ).value; 
+
 			    if ( aboutmeinput.length > 255 ) {
+
 			    	document.getElementById( "aboutmeerror" ).innerHTML = "Your about me section must be under 255 characters";
+
 			    	aboutmeOK = false;
+
 			    } else {
+
 			    	document.getElementById( "aboutmeerror" ).innerHTML = "";
-			    }
+
+			    }				
+
 			
+
 				var validEdu = validateEducation();
+
 				var validWork = validateWork();
 
+
+
 				return aboutmeOK && validEdu && validWork;
+
 					
+
 			}	
+
 			
+
 			function validateEducation(){
+
 				
+
 				 var input, educont = true, enddate, startdate, startbeforeend = true, numEducation = <?php echo $_SESSION['numEducation']?>;
+
 				 var datere = /\d{4}\-\d{2}\-\d{2}/;// /\d{4}(\-|\/)\d{1,2}(\-|\/)\d{1,2}|\d{1,2}(\-|\/)\d{1,2}(\-|\/)\d{4}/; **REGEX for allowing multiple formats			 
+
 			    			    
+
 				 
+
 				 for(var i = 0; i < numEducation; i++){
+
 				 	
+
 				 	input = document.getElementById( "institution" + i ).value;				
+
 				   if ( input.length == 0 ) {
+
 				   	document.getElementById( "institutionerror" + i ).innerHTML = "You must enter an institution";
+
 				   	educont = false;
+
 				   } else {
+
 				    	document.getElementById( "institutionerror" + i ).innerHTML = "";
+
 				   }
+
 				
+
 					input = document.getElementById( "qualification" + i ).value;				
+
 				   if ( input.length == 0 ) {
+
 				   	document.getElementById( "qualificationerror" + i ).innerHTML = "You must enter a qualification name";
+
 				   	educont = false;
+
 				   } else {
+
 				    	document.getElementById( "qualificationerror" + i ).innerHTML = "";
+
 				   }
+
 			
+
 					 startdate = document.getElementById( "startdate" + i ).value;
+
 					 var OKs = datere.exec( startdate );
+
 					 					
+
 				    if ( !OKs ) {
+
 				    	 document.getElementById( "startdateerror" + i ).innerHTML = "The start date must be in the format of YYYY-MM-DD";
+
 				   	 educont = false;
+
 				    }  else {
+
 				    	 document.getElementById( "startdateerror" + i ).innerHTML = "";
+
 				    }
+
 					 
+
 					 document.getElementById( "enddateerror" + i ).innerHTML = "";
+
 					 enddate = document.getElementById( "enddate" + i ).value;
+
 					 var OKe = datere.exec( enddate );
+
 					 				
+
 				    if ( !OKe ) {
+
 				    	 document.getElementById( "enddateerror" + i ).innerHTML = "The end date must be in the format of YYYY-MM-DD";
+
 				   	 educont = false;
+
 				    } else {
+
 				    	if( OKs ) {
+
 					    	if (  new Date( enddate ) <= new Date ( startdate ) ) {
+
 					    	 document.getElementById( "enddateerror" + i ).innerHTML = "The end date must be after the start date";
+
 					   	 educont = false;
+
 					   	}
+
 				    	} 
+
 				    } 
+
 				
+
 				 }
+
+
 
 				 return educont;
+
 			}	
+
 			
+
 			function validateWork(){
 
+
+
 				 var input, workcont = true, enddate, startdate, startbeforeend = true, numWork = <?php echo $_SESSION['numWork']?>;
+
 				 var datere = /\d{4}\-\d{2}\-\d{2}/;// /\d{4}(\-|\/)\d{1,2}(\-|\/)\d{1,2}|\d{1,2}(\-|\/)\d{1,2}(\-|\/)\d{4}/; **REGEX for allowing multiple formats			 			    
+
 				 
+
 				 for(var i = 0; i < numWork; i++){
+
 				 	
+
 				 	input = document.getElementById( "jobtitle" + i ).value;				
+
 				   if ( input.length == 0 ) {
+
 				   	document.getElementById( "jobtitleerror" + i ).innerHTML = "You must enter a job title";
+
 				   	workcont = false;
+
 				   } else {
+
 				    	document.getElementById( "jobtitleerror" + i ).innerHTML = "";
+
 				   }
+
 					
+
 					input = document.getElementById( "company" + i ).value;				
+
 				   if ( input.length == 0 ) {
+
 				   	document.getElementById( "companyerror" + i ).innerHTML = "You must enter a company name";
+
 				   	workcont = false;
+
 				   } else {
+
 				    	document.getElementById( "companyerror" + i ).innerHTML = "";
+
 				   }
+
 					
+
 					 startdate = document.getElementById( "startdatew" + i ).value;
+
 					 var OKs = datere.exec( startdate );
+
 					 		
+
 				    if ( !OKs ) {
+
 				    	 document.getElementById( "startdateerrorw" + i ).innerHTML = "The start date must be in the format of YYYY-MM-DD";
+
 				   	 workcont = false;
+
 				    }  else {
+
 				    	 document.getElementById( "startdateerrorw" + i ).innerHTML = "";
+
 				    }
+
 					 
+
 					 document.getElementById( "enddateerrorw" + i ).innerHTML = "";
+
 					 enddate = document.getElementById( "enddatew" + i ).value;
+
 					 var OKe = datere.exec( enddate );
+
 					 				
+
 				    if ( !OKe ) {
+
 				    	 document.getElementById( "enddateerrorw" + i ).innerHTML = "The end date must be in the format of YYYY-MM-DD";
+
 				   	 workcont = false;
+
 				    } else {
+
 				    	if( OKs ) {
+
 					    	if (  new Date( enddate ) <= new Date ( startdate ) ) {
+
 					    	 	document.getElementById( "enddateerrorw" + i ).innerHTML = "The end date must be after the start date";
+
 					   	 	workcont = false;
+
 					   	}
+
 				    	} 
+
 				    } 
+
 				
+
 				 }
 
+
+
 				 return workcont;
+
 			}
+
 		
+
 		</script>	
+
 		
+
 	</body>
+
 	
+
 </html>
+
+
 
 <?php
 
 
 
+
+
+
+
 function displayEducation(){
 
+
+
 	$numEducation = $_SESSION['numEducation'];
+
+	echo $numEducation;
+
 	
+
 	$eduString = "<b>Education</b><br>";
-	
+
 	for($i = 0; $i < $numEducation; $i++){	
-		$institution = isset($_POST['institution'.$i]) ? $_POST['institution'.$i] : "";
-		$qualification = isset($_POST['qualification'.$i]) ? $_POST['qualification'.$i] : "";	
-		$startdate = isset($_POST['startdate'.$i]) ? $_POST['startdate'.$i] : "YYYY-MM-DD";
-		$enddate = isset($_POST['enddate'.$i]) ? $_POST['enddate'.$i] : "YYYY-MM-DD";	
-		$gpa = isset($_POST['gpa'.$i]) ? $_POST['gpa'.$i] : "";	
-		$grade = isset($_POST['grade'.$i]) ? $_POST['grade'.$i] : "";	
-		$comments = isset($_POST['comments'.$i]) ? $_POST['comments'.$i] : "Enter any other information here";	
-		$eduString .= "<fieldset>" 
-							. "*Organization/Institution name: <input type='text' id='institution$i' name='institution$i' value='$institution' ><p id='institutionerror$i'></p><br>"
-							. "*Qualification Name: <input type='text' id='qualification$i' name='qualification$i' value='$qualification' ><p id='qualificationerror$i'></p><br>"
-							. "*Start Date: <input type='date' id='startdate$i' name='startdate$i' value='$startdate' ><p id='startdateerror$i'></p><br>"
-							. "*End Date: <input type='date' id='enddate$i' name='enddate$i' value='$enddate' ><p id='enddateerror$i'></p><br>"
-							. "GPA: <input type='number' step='0.01' name='gpa$i' id='gpa$i' value='$gpa' ><p id='gpaerror$i'></p><br>"
-							. "Grade: <input type='number' step = '0.01' name='grade$i' id='grade$i' value='$grade' ><p id='gradeerror$i'></p><br>"
-							. "Comments: <br><textarea name='comments$i' id='comments$i' form='resumeform'>$comments</textarea><p id='commentserror$i'></p><br>"
-							. "</fieldset>";
+
+		//if(!( in_array( $i,$_SESSION['delEduNums'] ) ) ){
+
+			if( $_SESSION['fromedit'] && $_SESSION['firstrun'] ){
+
+				$row = $_SESSION['Education'][$i];
+
+				$id = $row['EducationId'];
+
+				$institution = $row['Institution'];
+
+				$qualification = $row['QualName'];	
+
+				$level = $row['Level'];	
+
+				$major = $row['Major'];			
+
+				$startdate = $row['StartDate'];
+
+				$enddate = $row['EndDate'];
+
+				$gpa = $row['GPA'];	
+
+				$grade = $row['Grade'];
+
+				$comments = ( !is_null($row['Comments']) ) ? $row['Comments'] : "Enter any other information here";			
+
+			} else {
+
+				$id = -1; // Id of -1 represents a new entry
+
+				$institution = isset($_POST['institution'.$i]) ? $_POST['institution'.$i] : "";
+
+				$qualification = isset($_POST['qualification'.$i]) ? $_POST['qualification'.$i] : "";	
+
+				$level = isset($_POST['level'.$i]) ? $_POST['level'.$i] : "";	
+
+				$major = isset($_POST['major'.$i]) ? $_POST['major'.$i] : "";			
+
+				$startdate = isset($_POST['startdate'.$i]) ? $_POST['startdate'.$i] : "YYYY-MM-DD";
+
+				$enddate = isset($_POST['enddate'.$i]) ? $_POST['enddate'.$i] : "YYYY-MM-DD";	
+
+				$gpa = isset($_POST['gpa'.$i]) ? $_POST['gpa'.$i] : "";	
+
+				$grade = isset($_POST['grade'.$i]) ? $_POST['grade'.$i] : "";	
+
+				$comments = isset($_POST['comments'.$i]) ? $_POST['comments'.$i] : "";
+
+			}	
+
+			$eduString .= "<fieldset>" 
+
+								. "*Organization/Institution name: <input type='text' id='institution$i' name='institution$i' value='$institution' ><p id='institutionerror$i'></p><br>"
+
+								. "*Qualification Name: <input type='text' id='qualification$i' name='qualification$i' value='$qualification' ><p id='qualificationerror$i'></p><br>"
+
+								. addSelects($i)
+
+								. "*Start Date: <input type='date' id='startdate$i' name='startdate$i' value='$startdate' ><p id='startdateerror$i'></p><br>"
+
+								. "*End Date: <input type='date' id='enddate$i' name='enddate$i' value='$enddate' ><p id='enddateerror$i'></p><br>"
+
+								. "GPA: <input type='number' step='0.01' name='gpa$i' id='gpa$i' value='$gpa' ><p id='gpaerror$i'></p><br>"
+
+								. "Grade: <input type='number' step = '0.01' name='grade$i' id='grade$i' value='$grade' ><p id='gradeerror$i'></p><br>"
+
+								. "Comments: <br><textarea name='comments$i' id='comments$i' form='resumeform'>$comments</textarea><p id='commentserror$i'></p><br>"
+
+								. "<input type='hidden' id='eduid$i' name='eduid$i' value='$id' ><br>"
+
+								//. "<button type='submit' name='removeedu' formmethod='post' value='$i'>Remove</button><br>" 							
+
+								. "</fieldset>";
+
+			$eduString = insertSelectedLevel($eduString,$level);	
+
+			$eduString = insertSelectedMajor($eduString,$major);	
+
+		//}
+
 	}
+
 	$disabled = $numEducation >= 4 ? "disabled" : "";
+
 	$msg = $numEducation >= 4 ? "Only your four most recent qualifications are required" : "";
+
 	$eduString .=	"<input type='submit' id='addqualification' name='addqualification' value='Add Another Qualification' $disabled>$msg<br>";
+
 	
+
 	echo $eduString;
+
 	
+
 }
+
+
 
 function displayWork(){
 
-	$numWork = $_SESSION['numWork'];
-	
-	$workString = "<b>Work Experience</b><br>";
-	
-	for($i = 0; $i < $numWork; $i++){	
-		$jobtitle = isset($_POST['jobtitle'.$i]) ? $_POST['jobtitle'.$i] : "";
-		$company = isset($_POST['company'.$i]) ? $_POST['company'.$i] : "";	
-		$startdate = isset($_POST['startdatew'.$i]) ? $_POST['startdatew'.$i] : "YYYY-MM-DD";
-		$enddate = isset($_POST['enddatew'.$i]) ? $_POST['enddatew'.$i] : "YYYY-MM-DD";	
-		$jobdesc = isset($_POST['jobdesc'.$i]) ? $_POST['jobdesc'.$i] : "Enter a brief description of your role";	
-		$workString .= "<fieldset>" 
-							. "*Job Title: <input type='text' id='jobtitle$i' name='jobtitle$i' value='$jobtitle' ><p id='jobtitleerror$i'></p><br>"
-							. "*Company Name: <input type='text' id='company$i' name='company$i' value='$company' ><p id='companyerror$i'></p><br>"
-							. "*Start Date: <input type='date' id='startdatew$i' name='startdatew$i' value='$startdate' ><p id='startdateerrorw$i'></p><br>"
-							. "*End Date: <input type='date' id='enddatew$i' name='enddatew$i' value='$enddate' ><p id='enddateerrorw$i'></p><br>"
 
-							. "Job Description: <br><textarea name='jobdesc$i' id='jobdesc$i' form='resumeform'>$jobdesc</textarea><p id='jobdescerror$i'></p><br>"
-							. "</fieldset>";
+
+	$numWork = $_SESSION['numWork'];// - count( $_SESSION['delWorkNums'] );
+
+	
+
+	$workString = "<b>Work Experience</b><br>";
+
+	
+
+	for($i = 0; $i < $_SESSION['numWork']; $i++){
+
+		//if(!( in_array( $i,$_SESSION['delWorkNums'] ) ) ){
+
+			if( $_SESSION['fromedit'] && $_SESSION['firstrun'] ){
+
+				$row = $_SESSION['WorkExperience'][$i];
+
+				$id = $row['WorkExpId'];
+
+				$jobtitle = ( !is_null($row['JobTitle']) ) ? $row['JobTitle'] : "";
+
+				$company = $row['Company'];	
+
+				$startdate = $row['StartDate'];
+
+				$enddate = $row['EndDate'];
+
+				$jobdesc = ( !is_null($row['JobDesc']) ) ? $row['JobDesc'] : "";		
+
+			} else {	
+
+				$id = -1; // -1 WorkExpId represents a new work entry
+
+				$jobtitle = isset($_POST['jobtitle'.$i]) ? $_POST['jobtitle'.$i] : "";
+
+				$company = isset($_POST['company'.$i]) ? $_POST['company'.$i] : "";	
+
+				$startdate = isset($_POST['startdatew'.$i]) ? $_POST['startdatew'.$i] : "YYYY-MM-DD";
+
+				$enddate = isset($_POST['enddatew'.$i]) ? $_POST['enddatew'.$i] : "YYYY-MM-DD";	
+
+				$jobdesc = isset($_POST['jobdesc'.$i]) ? $_POST['jobdesc'.$i] : "Enter a brief description of your role";
+
+			}	
+
+			$workString .= "<fieldset>" 
+
+								. "*Job Title: <input type='text' id='jobtitle$i' name='jobtitle$i' value='$jobtitle' ><p id='jobtitleerror$i'></p><br>"
+
+								. "*Company Name: <input type='text' id='company$i' name='company$i' value='$company' ><p id='companyerror$i'></p><br>"
+
+								. "*Start Date: <input type='date' id='startdatew$i' name='startdatew$i' value='$startdate' ><p id='startdateerrorw$i'></p><br>"
+
+								. "*End Date: <input type='date' id='enddatew$i' name='enddatew$i' value='$enddate' ><p id='enddateerrorw$i'></p><br>"
+
+								. "Job Description: <br><textarea name='jobdesc$i' id='jobdesc$i' form='resumeform'>$jobdesc</textarea><p id='jobdescerror$i'></p><br>"
+
+								. "<input type='hidden' id='workid$i' name='workid$i' value='$id' ><br>"
+
+								//. "<button type='submit' name='removework' formmethod='post' value='$i'>Remove</button><br>" 
+
+								. "</fieldset>";
+
+		//} 
+
 	}
+
 	$disabled = $numWork >= 4 ? "disabled" : "";
+
 	$msg = $numWork >= 4 ? "Only your four most recent qualifications are required" : "";
+
 	$workString .=	"<input type='submit' id='addwork' name='addwork' value='Add Further Work Experience' $disabled>$msg<br>";
+
 	
+
 	echo $workString;
+
 	
+
 }
 
+
+
+function getResumeInfo(){
+
+	$aboutmedefault = "Enter a brief description of yourself here";
+
+	$qualifications = array();
+
+	$numEducation = $_SESSION['numEducation'];
+
+	//$deleted = in_array( $i, $_SESSION['delEduNums'] ) ? 1 : 0;
+
+	for($i = 0; $i < $numEducation; $i++){
+
+		$gpa = isset( $_POST['gpa' . $i] ) ? $_POST['gpa' . $i] : "";
+
+		$grade = isset( $_POST['grade' . $i] ) ? $_POST['grade' . $i] : "";
+
+		$level = ( $_POST['level' . $i] != "" ) ? $_POST['level' . $i] : "";
+
+		$major = ( $_POST['major' . $i] != "" ) ? $_POST['major' . $i] : "";
+
+		$default = "Enter any other information here";
+
+		$comments = ( $_POST['comments' . $i] != "" && $_POST['comments' . $i] != $default) ? $_POST['comments' . $i] : "";
+
+		$qualification = array(
+
+			"Institution" => $_POST['institution' . $i],
+
+	 		"QualName" => $_POST['qualification' . $i],
+
+	 		"Level" => $level,
+
+	 		"Major" => $major,
+
+	 		"StartDate" => $_POST['startdate' . $i],
+
+	 		"EndDate" => $_POST['enddate' . $i],
+
+	 		"GPA" => $gpa,
+
+	 		"Grade" => $grade,
+
+	 		"Comments" => $comments,
+
+	 		"EducationId" => $_POST['eduid' . $i]
+
+			//"Deleted" => $deleted
+
+		);
+
+		$qualifications[$i] = $qualification;
+
+	}
+
+	$workxp = array();
+
+	$numWork = $_SESSION['numWork'];
+
+	for($i = 0; $i < $numWork; $i++){
+
+		//$deleted = in_array( $i, $_SESSION['delWorkNums'] ) ? 1 : 0;
+
+		$default = "Enter a brief description of your role";
+
+		$jobdesc = ( $_POST['jobdesc' . $i] != "" && $_POST['jobdesc' . $i] != $default) ? $_POST['comments' . $i] : "";		
+
+		$role = array(
+
+			"JobTitle" => $_POST['jobtitle' . $i],
+
+	 		"Company" => $_POST['company' . $i],
+
+	 		"StartDate" => $_POST['startdatew' . $i],
+
+	 		"EndDate" => $_POST['enddatew' . $i],
+
+	 		"JobDesc" => $jobdesc,
+
+			"WorkExpId" => $_POST['workid' . $i]
+
+			//"Deleted" => $deleted
+
+		);
+
+		$workxp[$i] = $role;
+
+	}
+
+	$aboutme = ( $_POST['aboutme'] != "" && $_POST['aboutme'] != $aboutmedefault) ? $_POST['aboutme'] : "null";
+
+	
+
+	$resumeInfo = array(
+
+		"AboutMe" => $aboutme,
+
+		"Education" => $qualifications,
+
+		"WorkExperience" => $workxp
+
+	);
+
+	
+
+	return $resumeInfo;
+
+}
+
+
+
+function insertSelectedLevel($edustring,$level){
+
+	
+
+	if( $level != "" ){
+
+		$firstoccur = strpos ( $edustring , $level, 15 );
+
+		$length = strlen($level);
+
+		$insertpos = $firstoccur + $length + 2;
+
+		$newedustring = substr_replace($edustring,"selected='selected' ",$insertpos,0);
+
+		
+
+		return $newedustring;
+
+	} 
+
+	
+
+	return $edustring;
+
+ 
+
+}
+
+
+
+function insertSelectedMajor($edustring,$major){
+
+	
+
+	if( $major != "" ){
+
+		$firstoccur = strpos ( $edustring , $major );
+
+		$length = strlen($major);
+
+		$insertpos = $firstoccur + $length + 2;
+
+		$newedustring = substr_replace($edustring,"selected='selected' ",$insertpos,0);
+
+		
+
+		return $newedustring;
+
+	}
+
+
+
+	return $edustring;
+
+	 
+
+}
+
+
+
+function addSelects($i){
+
+	
+
+	return "*Level: <select name='level$i' id='level$i' >
+
+				<option value='' > Select One </option>
+
+				<option value='High School Diploma or Equivalent' > High School Diploma or Equivalent </option>
+
+				<option value='Associate' > Associate </option>
+
+				<option value='Bachelor' > Bachelor </option>
+
+				<option value='Graduate' > Graduate</option>
+
+				<option value='Master' > Master </option>
+
+				<option value='Doctoral' > Doctoral</option>
+
+		  </select><br>"
+
+		. "*Major: <select name='major$i' id='major$i' >
+
+				<option value='' > Select One </option>
+
+				<option value='Accounting' > Accounting </option>
+
+				<option value='Advertising' > Advertising </option>
+
+				<option value='Business Economics' > Business Economics</option>
+
+				<option value='E-commerce' > E-commerce </option>
+
+				<option value='Finance' > Finance </option>
+
+				<option value='Hospital and Health Care Administration' > Hospital and Health Care Administration </option>
+
+				<option value='International Business' > International Business </option>
+
+				<option value='Management' > Management</option>
+
+				<option value='Marketing' > Marketing </option>
+
+				<option value='Operations Management' > Operations Management </option>
+
+				<option value='Real Estate' > Real Estate </option>
+
+				<option value='Database Management' > Database Management </option>
+
+				<option value='Digital Arts' > Digital Arts</option>
+
+				<option value='Programming' > Programming </option>
+
+				<option value='Software Development' > Software Development </option>
+
+				<option value='Engineering' > Engineering </option>
+
+				<option value='Communications' > Communications </option>
+
+				<option value='Counseling' > Counseling </option>
+
+				<option value='Education' > Education </option>
+
+				<option value='English' > English </option>
+
+				<option value='Foreign Languages' > Foreign Languages </option>
+
+				<option value='Literature' > Literature </option>
+
+				<option value='Philosophy' > Philosophy</option>
+
+				<option value='Biology' > Biology </option>
+
+				<option value='Chemistry' > Chemistry </option>
+
+				<option value='Mathematics' > Mathematics </option>
+
+				<option value='Physics' > Physics </option>
+
+				<option value='American Studies' > American Studies </option>
+
+				<option value='Economics' > Economics </option>
+
+				<option value='History' > History </option>
+
+				<option value='Political Science' > Political Science </option>
+
+				<option value='Psychology' > Psychology </option>
+
+				<option value='Sociology' > Sociology </option>
+
+				<option value='Other' > Other </option>
+
+		  </select><br>";
+
+
+
+}
+
+
+
 ?>
-
-				
-
