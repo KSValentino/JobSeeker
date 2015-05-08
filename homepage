@@ -1,60 +1,215 @@
-<!DOCTYPE html>
-<html lang="en">
+<?php 
 
-<head>
-     <meta charset="utf-8" />
-     <title> Welcome to JobSeeker! </title>
-</head>
+session_start();
+include 'dboperation.php';
+
+if(isset($_GET['signup']))
+	displayEmpOrSeeker();
+else if(isset($_POST['createjobseekeraccount'])){
+	$_SESSION['usertype'] = 'seeker';
+	header("Refresh: 0; signup.php");
+} else if(isset($_POST['createemployeraccount'])) {
+	$_SESSION['usertype'] = 'employer';
+	header("Refresh: 0; signup.php");
+} else if(isset($_COOKIE['userid'])){
+	if($_COOKIE['usertype'] == "seeker"){
+		if(isset($_GET['createresume'])){
+			$_SESSION['fromedit'] = 0;
+			$_SESSION['firstrun'] = 1;
+			header("Refresh: 0; createresume.php");
+		}
+		else if(isset($_GET['viewedit'])){
+			$userid = $_GET['userid'];
+			header("Refresh: 0; customresume.php?userid=$userid");
+		} else if( isset($_GET['logout'])){
+			$cookie_name = "userid";
+			setcookie($cookie_name, -1, time() - 1000, "/"); 
+			$cookie_name = "usertype";
+			setcookie($cookie_name, "", time() - 1000, "/");
+			header("Refresh: 0;");
+		}
+		else 			
+			displaySeekerHome();	
+	}
+	elseif($_COOKIE['usertype'] = "employer"){
+		if(isset($_GET['employerquiz'])){
+			header("Refresh: 0; employerquiz.php");
+		}		
+		else if( isset($_GET['logout'])){
+			$cookie_name = "userid";
+			setcookie($cookie_name, -1, time() - 1000, "/"); 
+			$cookie_name = "usertype";
+			setcookie($cookie_name, "", time() - 1000, "/");
+			header("Refresh: 0;");
+		} else 
+			displayEmployerHome();
+	
+	}
+		
+		
+	else
+		displayHomePage();	
+} else
+	displayHomePage();
+
+
+?>
+
+<?php 
+
+function displayHomePage(){
+	
+?>
+<!DOCTYPE html>
+	<html lang="en">
+  	<head>
+    <meta charset="utf-8">
+	<title>Welcome to JobSeeker</title>
+   	 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+   	 	<meta name="description" content="">
+    	<meta name="author" content="Alex" >
+		<link rel="stylesheet" href="style.css" type="text/css"/>
+		<link href="homepage.css" rel="stylesheet" type="text/css"/>
+	</head>
 
 <body>
+<div class="container-fluid">
+<div class="row-fluid">
 
-<fieldset>
-	
-	<legend>Please click the link that applies to you</legend>
+<!--  Bootstrap source - <a href="http://designify.me">designify.me</a></p>  -->
 
-</body>
-</html>
+        <h1>Welcome to JobSeeker</h1>
+        
+</div>
+<div class="row-fluid">
+
+
+<form method="post" > 
+<div class="span3 jobseeker">
+                <div class="table-header-jobseeker">
+                    <h2>Jobseeker</h2>
+                    <h3>Create an Account</h3>
+                </div>
+                <div class="table-features">
+                    <p><strong>Enter</strong> Experience</p>
+                    <p><strong>Employers</strong> Search for You</p>
+                    <p><strong>Create</strong> Custom Resume</p>
+                </div>
+                <div class="table-signup-jobseeker">
+                  <p><input type="Submit" name="createjobseekeraccount" value="Sign Up!" /></p>
+                </div>
+            </div>
+</form>
+
+<br><br>
+          
+<form method="post" > 
+ <div class="span3 employer">
+                <div class="table-header-employer">
+                    <h2>Employer</h2>
+                    <h3>Create an Account</h3>
+                </div><div class="table-features">
+                    <p><strong>Search </strong> Database</p>
+                    <p><strong>Narrow Down </strong> Searches </p>
+                    <p><strong>Connect </strong> with Potential Employees</p>
+                </div>
+                <div class="table-signup-employer">
+                  <p> <input type="Submit" name="createemployeraccount" value="Sign Up!" /></p>
+                </div>
+            </div>
+</form>
+
+<br><br>
+
+<form method="get" action= "login.php"> 
+<div class="span3 login">
+                <div class="table-header-login">
+                    <h2>Have An Account?</h2>
+                    <h3>Login In</h3>
+                </div><div class="table-features">
+                    <p><strong>View </strong> Resume </p>
+                    <p><strong>Edit </strong> Information </p>
+                    <p><strong>Search </strong> Database </p>
+                </div>
+                <div class="table-signup-login">
+                    <p><input type="Submit" name="login" value="Log In!" /></p>
+                </div>
+            </div>
+</form>
+  
+
+</div>
+</div>
+
+<?php
+}
+
+function displaySeekerHome(){
 	
-	<form method="get" action="http://cscilab.bc.edu/~freemaal/JobSeeker/signup.php">
-	<h1>Job Seeker</h1>
-	<input type ="submit" name ="SeekerSubmit" value="Create Account!"/>
-	</form>
+	$userid = $_COOKIE['userid'];
+	$usertypeinput = "<input type='hidden' name='userid' value='$userid'>";
 	
-	<form method="get" action="http://cscilab.bc.edu/~freemaal/JobSeeker/login.php">
-	<h2>Already Have An Account?</h2>
-	<input type ="submit" name ="JobSeekerLogin" value="Click here!"/>
-	</form>
+	$rs = selectSeekerById($userid);
+	$userinfo = mysqli_fetch_assoc($rs);
 	
-	<form method="post" action="http://cscilab.bc.edu/~freemaal/JobSeeker/employerlogin.php">
-	<h1>Employer</h1>
-	<input type ="submit" name ="EmployerSubmit" value="Click here!"/>
-	</form>
 	
-<TD class="RightCurve">&nbsp;</TD>
-</TR>
-</TABLE>
-<TABLE BORDER="0" WIDTH="100%" CELLPADDING="0"CELLSPACING="0" class="RegionNoBorder"><TR><TD class="RegionHeaderColor" WIDTH="100%" DIR="LTR" ><DIV id="pcnt1188_661053_1188_657330_657330"><p>
- <!-- rss portlet start -->
-<h2><a href="http://time.com" target="_blank">TIME</a>
-</h2>
-<ul>
-   <li><a href="http://feedproxy.google.com/%7Er/time/topstories/%7E3/jS40MIDMN70/" target="_blank" title="">Google Maps Is Now a Giant Game of Pac-Man</a>
-   </li>
-   <li><a href="http://feedproxy.google.com/%7Er/time/topstories/%7E3/ZSLg6F_SC3A/" target="_blank" title="">White House Outlines Plans to Cut Carbon Emissions by up to 28%</a>
-   </li>
-   <li><a href="http://feedproxy.google.com/%7Er/time/topstories/%7E3/NrUOEEHSQrg/" target="_blank" title="">Connecticut Gov. Malloy: âMike Pence Knew What He Was Doingâ</a>
-   </li>
-   <li><a href="http://feedproxy.google.com/%7Er/time/topstories/%7E3/zswAgsgnJjY/" target="_blank" title="">Kit Harington Has a Point About Women Objectifying Men</a>
-   </li>
-   <li><a href="http://feedproxy.google.com/%7Er/time/topstories/%7E3/2EpW4tRm4Qk/" target="_blank" title="">Woman Stabs Boyfriend For Eating Her Salsa</a>
-   </li>
-</ul>
- <!-- rss portlet end -->
-</p>
-</DIV></TD></TR>
-</TABLE>
-</DIV></TD></TR>
+?>
+	
+	<form method="get" >
+	
+			
+		<fieldset>
+	   	<legend><b>Welcome <?php echo $userinfo['FirstName'] . " " . $userinfo['LastName'] ?> </b></legend>
+			<h3>Select the action you would like to take:</h3>
+			<div style="float:left; overflow:hidden; ">
+				<body style="background-color:lightblue">
+				<?php echo $usertypeinput ?>
+
+				<input type="submit" id="createresume" name="createresume" value="Create Resume"><br><br>
+				<input type="submit" id="viewedit" name="viewedit" value="View or Edit Resume"><br><br>
+				<input type="submit" id="logout" name="logout" value="Logout"><br><br>															
+				
+			</div>
+
+		</fieldset>	
 		
-</fieldset>
+	</form>
+		
+<?php 	
+}
+
+function displayEmployerHome(){
+	
+	$userid = $_COOKIE['userid'];
+	$usertypeinput = "<input type='hidden' name='userid' value='$userid'>";
+	
+	$rs = selectEmployerById($userid);
+	$userinfo = mysqli_fetch_assoc($rs);
+	
+?>
+	
+	<form method="get" >
+	
+			
+		<fieldset>
+	   	<legend><b>Welcome <?php echo $userinfo['ContactFirstName'] . " " . $userinfo['ContactLastName'] ?> </b></legend>
+			<h3>Select the action you would like to take:</h3>
+			<div style="float:left; overflow:hidden; ">
+				<body style="background-color:lightblue">
+				<?php echo $usertypeinput ?>
+
+				<input type="submit" id="employerquiz" name="employerquiz" value="Search for applicants"><br><br>
+				<input type="submit" id="logout" name="logout" value="Logout"><br><br>															
+				
+			</div>
+
+		</fieldset>	
+		
+	</form>
+		
+<?php 
+}	
+	
+?>
 </body>
 </html>
