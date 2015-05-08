@@ -1,73 +1,224 @@
+<?php
+include 'dboperation.php';
+?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
         <title> Search the Database </title>
+    <style>
+     	body{background-color: lightblue;}
+     		<!-- http://www.textfixer.com/tutorials/css-tables.php -->
+		table.resultstable {
+			font-family: verdana,arial,sans-serif;
+			font-size:11px;
+			color:#333333;
+			border-width: 1px;
+			border-color: #999999;
+			border-collapse: collapse;
+		}
+		table.resultstable th {
+			background:#b5cfd2 url('cell-blue.jpg');
+			border-width: 1px;
+			padding: 8px;
+			border-style: solid;
+			border-color: #999999;
+		}
+		table.resultstable td {
+			background:#dcddc0 url('cell-grey.jpg');
+			border-width: 1px;
+			padding: 8px;
+			border-style: solid;
+			border-color: #999999;
+		}
+	</style>
+
 </head>
 <body>
-<?php
 
-	$_GET['level']; 
-	$_GET['major']; 
-	$_GET['gpa']; 
-	
-?>
 
 <?php
-echo "<form method='post' action='CustomResume.php'>"; 
 
-function performQuery($dbc, $query){
-	$result = mysqli_query($dbc, $query) or die("bad query".mysqli_error($dbc));
-	return $result;
-}
-	
-	$servername = "localhost";
+
+
+	/*$servername = "localhost";
 	$username = "freemaal";
 	$password = "zUtqzmrJ";
 	$dbname = "freemaal";
-	$major = $_GET['major']; 
-	$level = $_GET['level'];
-	$major = $_GET['major'];
-	$gpa = $_GET['gpa'];
 	
 	$conn = new mysqli($servername, $username, $password, $dbname);
 		if ($conn->connect_error) {
      	die("Connection failed: " . $conn->connect_error);
-	} 
-
-	$sql = 	"SELECT * FROM `Education` WHERE  `Major` Like '%$major%'";
-
-			
-	$result = performQuery($conn, $sql);
+	} 	
 	
+	*/
+	$major = $_GET['major']; 
+	$level = $_GET['level'];
+	$mingpa = $_GET['mingpa'];
+	$maxgpa = $_GET['maxgpa'];
+	$acceptabledist = $_GET['distance'];
+	
+	$levelclause = ($level != "Select One") ? " AND e.`Level` = '$level'" : "";
+	$majorclause = ($major != "Select One") ? " AND e.`Major` = '$major'" : "";
+	
+		
+
+	$sql = 	"SELECT * FROM `Resume` r, `Education` e, `WorkExperience` w" .  
+				" WHERE e.`ResumeId` = r.`ResumeId` AND e.`ResumeId` = w.`ResumeId` AND w.`ResumeId` = r.`ResumeId`" . 
+				" AND e.`GPA` >= $mingpa AND e.`GPA` <= $maxgpa " . 
+				$levelclause . $majorclause;
+	
+	$result = performQuery($sql);
+	
+	$matchingseekers = array();
+	
+	$empid = $_COOKIE['userid'];
+	$sql = "SELECT * FROM `Employer` WHERE `EmployerId` = '$empid'";
+	$rs = performQuery($sql);
+	$emp = mysqli_fetch_array($rs);	
+	
+	if($acceptabledist != "" && !is_null($acceptabledist)){
+
+		$empaddress = $emp['Address'];
+		
+		$empdata = getlatlong($empaddress);
+		$emplat = $empdata[0];
+		$emplon = $empdata[1];
+	
+		while($seeker = mysqli_fetch_array($result)) {
+			
+				$seekerid = $seeker['JobSeekerId'];
+				$sql = 	"SELECT * FROM `JobSeeker` WHERE `JobSeekerId` = '$seekerid'";
+				$rs = performQuery($sql);
+				$seeker = mysqli_fetch_array($rs, MYSQLI_ASSOC);
+				$seekeraddress = $seeker['Address'];
+				
+				$seekerdata = getlatlong($seekeraddress);
+				
+				$hiddenfrom = $seeker['HiddenFrom'];
+				
+				if($seekerdata != false){
+					$seekerlat = $seekerdata[0];
+					$seekerlon = $seekerdata[1];
+					$distance = calcDistance($emplat,$emplon,$seekerlat,$seekerlon);
+					
+					if( ( $distance < $acceptabledist ) && ( strpos($hiddenfrom,$emp['Company'] ) == false ) ){
+						array_push($matchingseekers,$seeker);		
+					}
+				}
+			} 
+		} else {
+			while($seeker = mysqli_fetch_array($result)) { 
+				array_push($matchingseekers,$seeker);
+			}
+		}
+	
+	
+	
+	
+	echo "<form method='get' action='customresume.php'>"; 
 	echo "<h2> Results that Match Your Preferences </h2>"; 
 	echo "<h3> Click for more information on a candidate </h3>"; 
 	
-	while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-     	echo "<table><tr><th></th><th>Job Seeker</th><th>About Me</th></tr>";
-         	echo "<tr>
-					<td> 
-         				<input type='radio' onclick='getinfo&#40;this&#41;' name='learnmore'/>	
-         			</td>	
-         			<td>			
-         							" . $row["Institution"]. " <br>
-         							" . $row["Level"]. " <br>
-         							" . $row["Major"]. " <br>
-         							" . $row["GPA"]. "
-         					
-         			</td>
-         			
-         			<td>			" . $row["Comments"]. " <br>
-         			</td>
-         		</tr>";
-    	}
+	
+	
+	foreach ($matchingseekers as $row) {
+		$seekerid = $row['JobSeekerId'];
+		$sql = 	"SELECT * FROM `JobSeeker` WHERE `JobSeekerId` = '$seekerid'";
+		$rs = performQuery($sql);
+		$seeker = mysqli_fetch_array($rs, MYSQLI_ASSOC);
+		$name = $seeker['FirstName'] . " " . $seeker['LastName'];
+		if(strpos($seeker['HiddenFrom'],$emp['Company']) === false){
+			
+			echo "<table class='resultstable'>";
+		     	echo"<tr><th></th><th>Job Seeker</th><th>About Me</th></tr>";
+		         	echo "<tr>
+							<td> 
+		         				<input type='radio' onclick='getinfo&#40;this&#41;' name='userid' value='$seekerid'/>	
+		         			</td>	
+		         			<td>			
+		         							<strong> " . $name . " </strong> <br> 
+		         							" . $row["Institution"]. " <br>
+		         							" . $row["Level"]. " in " . $row["Major"]. " <br>
+		         							GPA " . $row["GPA"]. "
+		         					
+		         			</td>
+		         			
+		         			<td>			" . $row["AboutMe"]. " <br>
+		         			</td>
+		         		</tr>";
+		    	}
+		 }
      		echo "</table>";
 	
-	$conn->close();
+	//$conn->close();
 	
-	echo "<input type='submit' name='submit' value='View Full Resume'/>"; 
+	echo "<input type='submit' name='submit' value='View Full Resume'/><br><br>"; 
+	echo "<a href='homepage.php' >Take me back to the home page</a><br>";
 	echo "</form>"; 
+		
 ?>
 
 
 </body>
 </html>
+
+<?php 
+	
+	function getlatlong($address){
+	 	
+	    $urladdress = urlencode($address);
+	     
+	    $url = "http://maps.google.com/maps/api/geocode/json?sensor=false&address={$urladdress}";
+	 
+	    $json = file_get_contents($url);
+	     
+	    $return = json_decode($json, true);
+	 
+	    if($return['status']=='OK'){
+	 
+	        $latitude = $return['results'][0]['geometry']['location']['lat'];
+	        $longitude = $return['results'][0]['geometry']['location']['lng'];
+	        $formatted_address = $return['results'][0]['formatted_address'];
+	         
+	        if($latitude && $longitude && $formatted_address){
+	         
+	            $data_arr = array();            
+	             
+	            array_push(
+	                $data_arr, 
+	                    $latitude, 
+	                    $longitude, 
+	                    $formatted_address
+	                );
+	             
+	            return $data_arr;
+	             
+	        } else {
+	            return false;
+	        } 
+	    } else {
+	        return false;
+	    }
+	}
+
+	function calcDistance($lat1,$lon1,$lat2,$lon2){
+		
+		$R = 6371000; // metres
+		$latrad1 = deg2rad( $lat1 );
+		$latrad2 = deg2rad( $lat2 );
+		$latdif = deg2rad( $lat2-$lat1 );
+		$londif = deg2rad( $lon2-$lon1 );
+
+		$a = sin($latdif/2) * sin($latdif/2) +
+        cos($latrad1) * cos($latrad2) *
+        sin($londif/2) * sin($londif/2);
+		$c = 2 * atan2(sqrt($a), sqrt(1-$a));
+
+		$distance = $R * $c;
+		
+		return ($distance / 1000); // For kilometers
+	}
+
+
+?>
